@@ -1,8 +1,12 @@
+/**
+ * @file ctx扩展demo
+ */
+
 const simpleKoa = require('../src/application');
 const app = new simpleKoa();
 
 /**
- * 对 ctx 进行扩展
+ * 定义一个扩展方法
  */
 app.context.echoData = function (errNo = 0, errMsg = '', data = null) {
   this.res.setHeader('Content-Type', 'application/json;charset=utf-8');
@@ -11,7 +15,7 @@ app.context.echoData = function (errNo = 0, errMsg = '', data = null) {
 
 app.use(async ctx => {
   const data = {
-    name: 'sean',
+    name: ctx.query.name || 'sean',
     age: 24,
     sex: 'male'
   };
