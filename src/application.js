@@ -2,13 +2,15 @@
  * @file application 对象
  */
 
+const EventEmitter = require('events');
 const http = require('http');
 const context = require('./context');
 const request = require('./request');
 const response = require('./response');
 
-module.exports = class Application {
+module.exports = class Application extends EventEmitter {
   constructor () {
+    super();
     this.middlewareList = [];
     this.context = context;
     this.request = request;
@@ -41,8 +43,11 @@ module.exports = class Application {
     return (req, res) => {
       const ctx = this.createContext(req, res);
       const fn = this.compose();
+
       const respond = () => this.responseBody(ctx);
-      fn(ctx).then(respond);
+      const onError = err => this.onError(err, ctx);
+
+      fn(ctx).then(respond).catch(onError);
     };
   }
 
@@ -98,5 +103,23 @@ module.exports = class Application {
     } else {
       ctx.res.end(content);
     }
+  }
+
+  /**
+   * 错误处理
+   *
+   * @param {Object} err Error对象
+   * @param {Object} ctx ctx实例
+   */
+  onError(err, ctx) {
+    if (err.code === 'ENOENT') {
+      ctx.status = 404;
+    } else {
+      ctx.status = 500;
+    }
+    const msg = err.message || 'Internal error';
+    ctx.res.end(msg);
+    // 触发 error 事件
+    this.emit('error', err);
   }
 };
